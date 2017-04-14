@@ -10,6 +10,8 @@
 //2 for Dataset 1
 //4.5 for Dataset 2
 #define SQUARE_DIM 2
+#define OUTPUT_FILE_NAME "centers.out"
+#define ROUNDOFF 1000
 
 using namespace std;
 
@@ -20,7 +22,7 @@ struct Coordinates
 	float x;
 	float y;
 	float z;
-	int bit;
+	//int bit;
 };
 
 void addCoord(vector<Coordinates> &vt, float a, float b, float c)
@@ -93,14 +95,14 @@ void averageFunc(vector<Coordinates> vtInRange, vector<Coordinates> &vtNew, vect
 	}
 }
 
-void removeDuplicates(vector<Coordinates> &vtTemp)
-{
-	//TODO: Remove duplicate entries...		
-}
+//void removeDuplicates(vector<Coordinates> &vtTemp)
+//{
+//	//TODO: Remove duplicate entries...		
+//}
 
 void addTempToMainVector(vector<Coordinates> &vtNew, vector<Coordinates> vtTemp)
 {	
-	removeDuplicates(vtTemp);
+	//removeDuplicates(vtTemp);
 	vtNew.insert(vtNew.end(), vtTemp.begin(), vtTemp.end());
 }
 
@@ -174,6 +176,40 @@ int areVecEqual(vector<Coordinates> &vtNew, vector<Coordinates> &vtUpdated)
 	return iRet;
 }
 
+float roundOff(float inp)
+{
+	//To keep only 3 values after . 
+	return(floor(inp * ROUNDOFF) / ROUNDOFF);
+}
+
+void writeToFile(vector<Coordinates> &vt, int inputSize)
+{
+	vector<Coordinates> ::iterator it;
+	ofstream myfile;
+	
+	float oldX = 0., oldY = 0., oldZ = 0.;
+	int ittr = 0;
+
+	myfile.open(OUTPUT_FILE_NAME);
+	
+	for (it = vt.begin(); it != vt.end(); it++, ittr++)
+	{		
+		//ittr is for filtering the input files...
+		//oldX, oldY, and oldZ are for removing duplicate entries...
+		if (((ittr+1) > inputSize) && ((roundOff(oldX) != roundOff(it->x)) || (roundOff(oldY) != roundOff(it->y)) || (roundOff(oldZ) != roundOff(it->z))))
+		{
+			myfile << it->x << ", " << it->y << ", " << it->z << "\n";
+			//myfile << oldX << ", " << oldY << ", " << oldZ << "\n";
+		}
+		
+		oldX = it->x;
+		oldY = it->y;
+		oldZ = it->z;
+	}
+
+	myfile.close();
+}
+
 int main(int argc, char **argv)
 {
 	try
@@ -190,6 +226,7 @@ int main(int argc, char **argv)
 		vtOld.clear();
 
 		readIpFile(vt);
+		int inputSize = vt.size();
 
 		while (1)
 		{
@@ -204,6 +241,7 @@ int main(int argc, char **argv)
 			{
 				cout << "Breaking as the points have not changes...." << endl;
 				//TODO: Write the points to output file...
+				writeToFile(vt, inputSize);
 				break;
 			}
 			else
