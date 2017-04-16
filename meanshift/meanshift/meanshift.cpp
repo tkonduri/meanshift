@@ -12,8 +12,8 @@
 //2 for Dataset 1
 //4.5 for Dataset 2
 //#define SQUARE_DIM 2
-int SQUARE_DIM;
-int ROUNDOFF;// 100000
+float SQUARE_DIM;
+int ROUNDOFF;
 #define OUTPUT_FILE_NAME "centers.out"
 
 using namespace std;
@@ -25,8 +25,9 @@ struct Coordinates
 	float x;
 	float y;
 	float z;
-	//int bit;
 };
+
+vector<Coordinates> vtCenters;
 
 float roundOff(float inp)
 {
@@ -100,6 +101,7 @@ void averageFunc(vector<Coordinates> vtInRange, vector<Coordinates> &vtNew, vect
 		{
 			//TODO: Add only unique elements...
 			addCoord(vtTemp, mX, mY, mZ);			
+			addCoord(vtCenters, mX, mY, mZ);
 		}
 	}
 }
@@ -172,7 +174,7 @@ int areVecEqual(vector<Coordinates> &vtNew, vector<Coordinates> &vtUpdated)
 	return iRet;
 }
 
-void writeToFile(vector<Coordinates> &vt, int inputSize)
+void writeToFile()
 {
 	vector<Coordinates> ::iterator it;
 	ofstream myfile;
@@ -182,13 +184,13 @@ void writeToFile(vector<Coordinates> &vt, int inputSize)
 
 	myfile.open(OUTPUT_FILE_NAME);
 	
-	for (it = vt.begin(); it != vt.end(); it++, ittr++)
+	for (it = vtCenters.begin(); it != vtCenters.end(); it++, ittr++)
 	{		
 		//ittr is for filtering the input files...
 		//oldX, oldY, and oldZ are for removing duplicate entries...
-		if (/*((ittr+1) > inputSize) && */((roundOff(oldX) != roundOff(it->x)) || (roundOff(oldY) != roundOff(it->y)) || (roundOff(oldZ) != roundOff(it->z))))
+		if ((roundOff(oldX) != roundOff(it->x)) || (roundOff(oldY) != roundOff(it->y)) || (roundOff(oldZ) != roundOff(it->z)))
 		{
-			myfile << it->x << ", " << it->y << ", " << it->z << "\n";
+			myfile << it->x << ", " << it->y << ", " << it->z << "\n";			
 		}
 		
 		oldX = it->x;
@@ -239,14 +241,14 @@ int main(int argc, char **argv)
 			{
 				cout << "Breaking as the points have not changes...." << endl;
 				//TODO: Write the points to output file...
-				writeToFile(vt, inputSize);
+				writeToFile();
 				break;
 			}
-			else
+			/*else
 			{
 				displayCoord(vt);
 				cout << endl;
-			}
+			}*/
 		}
 
 		end = chrono::system_clock::now();
