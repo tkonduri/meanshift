@@ -5,13 +5,15 @@
 #include <vector>
 #include <algorithm>
 #include <math.h>
+#include <chrono>
 
 //Also known as Kernel..
 //2 for Dataset 1
 //4.5 for Dataset 2
-#define SQUARE_DIM 2
+//#define SQUARE_DIM 2
+int SQUARE_DIM;
+int ROUNDOFF;// 100000
 #define OUTPUT_FILE_NAME "centers.out"
-#define ROUNDOFF 1000
 
 using namespace std;
 
@@ -24,6 +26,12 @@ struct Coordinates
 	float z;
 	//int bit;
 };
+
+float roundOff(float inp)
+{
+	//To keep only 3 values after . 
+	return(floor(inp * ROUNDOFF) / ROUNDOFF);
+}
 
 void addCoord(vector<Coordinates> &vt, float a, float b, float c)
 {
@@ -79,7 +87,7 @@ void averageFunc(vector<Coordinates> vtInRange, vector<Coordinates> &vtNew, vect
 	//Add the mean to the existing points list...
 	for (it2 = vtNew.begin(); it2 != vtNew.end(); it2++)
 	{
-		if ((it2->x == mX) && (it2->y == mY) && (it2->z == mZ))
+		if ((roundOff(it2->x) == roundOff(mX)) && (roundOff(it2->y) == roundOff(mY)) && (roundOff(it2->z) == roundOff(mZ)))
 		{
 			flag = 1;
 			break;
@@ -94,11 +102,6 @@ void averageFunc(vector<Coordinates> vtInRange, vector<Coordinates> &vtNew, vect
 		}
 	}
 }
-
-//void removeDuplicates(vector<Coordinates> &vtTemp)
-//{
-//	//TODO: Remove duplicate entries...		
-//}
 
 void addTempToMainVector(vector<Coordinates> &vtNew, vector<Coordinates> vtTemp)
 {	
@@ -129,7 +132,7 @@ void msAlgo(vector<Coordinates> &vtNew)
 			{
 				//TODO: Check if we need to handle border cases...
 				//If bit == 0, then only do the average calculation on that point, otherwise skip it, as it has already been used for average calculation... 
-				if (i > 0 && j > 0)
+				if (i >= 0 && j >= 0)
 				{
 					//Traversing each entry of the points vector to see if there is a match (If the point is present)...
 					for (it2 = vtNew.begin(); it2 != vtNew.end(); it2++)
@@ -176,12 +179,6 @@ int areVecEqual(vector<Coordinates> &vtNew, vector<Coordinates> &vtUpdated)
 	return iRet;
 }
 
-float roundOff(float inp)
-{
-	//To keep only 3 values after . 
-	return(floor(inp * ROUNDOFF) / ROUNDOFF);
-}
-
 void writeToFile(vector<Coordinates> &vt, int inputSize)
 {
 	vector<Coordinates> ::iterator it;
@@ -199,7 +196,6 @@ void writeToFile(vector<Coordinates> &vt, int inputSize)
 		if (((ittr+1) > inputSize) && ((roundOff(oldX) != roundOff(it->x)) || (roundOff(oldY) != roundOff(it->y)) || (roundOff(oldZ) != roundOff(it->z))))
 		{
 			myfile << it->x << ", " << it->y << ", " << it->z << "\n";
-			//myfile << oldX << ", " << oldY << ", " << oldZ << "\n";
 		}
 		
 		oldX = it->x;
@@ -219,6 +215,12 @@ int main(int argc, char **argv)
 		ipFilePath = argv[1];
 		cout << "The input file path = " << argv[1] << endl;
 
+		SQUARE_DIM = atoi(argv[2]);
+		cout << "Kernel Dimention = " << SQUARE_DIM << endl;
+
+		ROUNDOFF = atoi(argv[3]);
+		cout << "Roundoff value = " << ROUNDOFF << endl;
+
 		//variable declarations...
 		vector<Coordinates> vt, vtOld;
 
@@ -227,6 +229,9 @@ int main(int argc, char **argv)
 
 		readIpFile(vt);
 		int inputSize = vt.size();
+
+		chrono::time_point<chrono::system_clock> begin, end;
+		begin = chrono::system_clock::now();
 
 		while (1)
 		{
@@ -250,10 +255,15 @@ int main(int argc, char **argv)
 				cout << endl;
 			}
 		}
+
+		end = chrono::system_clock::now();
+		chrono::duration<double> totaltime = (end - begin);
+		cout << "Time Taken in sec = " << (float)totaltime.count() << std::endl;
 	}
 	catch (const exception& ex)
 	{
 		cout << "Exception occured: " << ex.what();
 	}
+
 	return 0;
 }
