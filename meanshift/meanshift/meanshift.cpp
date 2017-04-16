@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <math.h>
 #include <chrono>
+#include <iomanip>
 
 //Also known as Kernel..
 //2 for Dataset 1
@@ -59,12 +60,12 @@ void readIpFile(vector<Coordinates> &vtNew)
 
 void displayCoord(vector<Coordinates> vtNew)
 {
-	vector<Coordinates> ::iterator it;
+	vector<Coordinates> ::iterator it;	
 	for (it = vtNew.begin(); it != vtNew.end(); it++)
 	{
-		cout << "x = " << it->x;
-		cout << ", y = " << it->y;
-		cout << ", z = " << it->z << endl;
+		cout << "x = " << setprecision(8) << it->x;
+		cout << ", y = " << setprecision(8) << it->y;
+		cout << ", z = " << setprecision(8) << it->z << endl;
 	}
 }
 
@@ -127,26 +128,18 @@ void msAlgo(vector<Coordinates> &vtNew)
 		float endPntX = ((it->x) + SQUARE_DIM);
 		float endPntY = ((it->y) - SQUARE_DIM);
 		
-		for (float i = startPntY; i >= endPntY; i--)
-			for (float j = startPntX; j <= endPntX; j++)
-			{
-				//TODO: Check if we need to handle border cases...
-				//If bit == 0, then only do the average calculation on that point, otherwise skip it, as it has already been used for average calculation... 
-				if (i >= 0 && j >= 0)
+		//Traversing each entry of the points vector to see if there is a match (If the point is present)...
+		for (it2 = vtNew.begin(); it2 != vtNew.end(); it2++)
+		{
+				if (((it2->x) >= startPntX) && ((it2->x) <= endPntX) && ((it2->y) <= startPntY) && ((it2->y) >= endPntY))
 				{
-					//Traversing each entry of the points vector to see if there is a match (If the point is present)...
-					for (it2 = vtNew.begin(); it2 != vtNew.end(); it2++)
-					{
-						if (i == (it2->y) && j == (it2->x))
-						{
-							//Adding the the element in the range to the vtInRange vector, for average calculation...
-							//NOTE: these are the initial points...
-							addCoord(vtInRange, j, i, it2->z);								
-						}
-					}
+					//Adding the the element in the range to the vtInRange vector, for average calculation...
+					//NOTE: these are the initial points...							
+					addCoord(vtInRange, it2->x, it2->y, it2->z);
 				}
-			}
+		}
 		averageFunc(vtInRange, vtNew, vtTemp);
+		vtInRange.clear();
 	}
 	addTempToMainVector(vtNew, vtTemp);
 }
@@ -193,7 +186,7 @@ void writeToFile(vector<Coordinates> &vt, int inputSize)
 	{		
 		//ittr is for filtering the input files...
 		//oldX, oldY, and oldZ are for removing duplicate entries...
-		if (((ittr+1) > inputSize) && ((roundOff(oldX) != roundOff(it->x)) || (roundOff(oldY) != roundOff(it->y)) || (roundOff(oldZ) != roundOff(it->z))))
+		if (/*((ittr+1) > inputSize) && */((roundOff(oldX) != roundOff(it->x)) || (roundOff(oldY) != roundOff(it->y)) || (roundOff(oldZ) != roundOff(it->z))))
 		{
 			myfile << it->x << ", " << it->y << ", " << it->z << "\n";
 		}
