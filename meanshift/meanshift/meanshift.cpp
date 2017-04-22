@@ -101,15 +101,15 @@ void averageFunc(vector<Coordinates> vtInRange, vector<Coordinates> &vtNew, vect
 		{
 			//TODO: Add only unique elements...
 			addCoord(vtTemp, mX, mY, mZ);			
-			addCoord(vtCenters, mX, mY, mZ);
+			//addCoord(vtCenters, mX, mY, mZ);
 		}
 	}
 }
 
 void addTempToMainVector(vector<Coordinates> &vtNew, vector<Coordinates> vtTemp)
-{	
-	//removeDuplicates(vtTemp);
+{
 	vtNew.insert(vtNew.end(), vtTemp.begin(), vtTemp.end());
+	vtCenters.insert(vtCenters.end(), vtTemp.begin(), vtTemp.end());
 }
 
 void msAlgo(vector<Coordinates> &vtNew)
@@ -121,9 +121,9 @@ void msAlgo(vector<Coordinates> &vtNew)
 
 	vtInRange.clear();
 	vtTemp.clear();
-
+	
 	//For each point in the image, check for all the points inside its surrounding square to find out the mean.
-	for (it = vtNew.begin(); it != vtNew.end(); it++)
+	for (it = vtCenters.begin(); it != vtCenters.end(); it++)
 	{
 		float startPntX = ((it->x) - SQUARE_DIM);
 		float startPntY = ((it->y) + SQUARE_DIM);
@@ -143,6 +143,7 @@ void msAlgo(vector<Coordinates> &vtNew)
 		averageFunc(vtInRange, vtNew, vtTemp);
 		vtInRange.clear();
 	}
+	vtCenters.clear();	//clearing old centers to add newly calculated centers...
 	addTempToMainVector(vtNew, vtTemp);
 }
 
@@ -174,20 +175,19 @@ int areVecEqual(vector<Coordinates> &vtNew, vector<Coordinates> &vtUpdated)
 	return iRet;
 }
 
-void writeToFile()
+void writeToFile(vector<Coordinates> &vt)
 {
 	vector<Coordinates> ::iterator it;
 	ofstream myfile;
 	
 	float oldX = 0., oldY = 0., oldZ = 0.;
-	int ittr = 0;
 
 	myfile.open(OUTPUT_FILE_NAME);
 	
-	for (it = vtCenters.begin(); it != vtCenters.end(); it++, ittr++)
+	for (it = vt.begin(); it != vt.end(); it++)
 	{		
-		//ittr is for filtering the input files...
 		//oldX, oldY, and oldZ are for removing duplicate entries...
+		//TODO: Check if we need to replace || with &&
 		if ((roundOff(oldX) != roundOff(it->x)) || (roundOff(oldY) != roundOff(it->y)) || (roundOff(oldZ) != roundOff(it->z)))
 		{
 			myfile << it->x << ", " << it->y << ", " << it->z << "\n";			
@@ -210,7 +210,7 @@ int main(int argc, char **argv)
 		ipFilePath = argv[1];
 		cout << "The input file path = " << argv[1] << endl;
 
-		SQUARE_DIM = atoi(argv[2]);
+		SQUARE_DIM = float(atoi(argv[2]));
 		cout << "Kernel Dimention = " << SQUARE_DIM << endl;
 
 		ROUNDOFF = atoi(argv[3]);
@@ -223,25 +223,37 @@ int main(int argc, char **argv)
 		vtOld.clear();
 
 		readIpFile(vt);
-		int inputSize = vt.size();
+		vtCenters = vt;	//Initially centers vector will have the points from the input file...
 
 		chrono::time_point<chrono::system_clock> begin, end;
 		begin = chrono::system_clock::now();
 
+		//Option1
 		while (1)
 		{
+		//for(int i=0; i<100; i++)  //Option2
+		//{
 			cout << "##### Algorithm:" << endl;
 
-			//Old vt, before adding in the mean values...This is required for comparision...
-			vtOld = vt;
+			if (vtCenters.size() == 0)
+			{
+				cout << "Breaking as the center is found...." << endl;
+				//TODO: Write the points to output file...
+				writeToFile(vtOld);
+				break;
+			}
 
+			//Old vt, before adding in the mean values...This is required for comparision...
+			vtOld = vtCenters;
+
+			// Main algorithm function...
 			msAlgo(vt);
 
-			if (1 == areVecEqual(vt, vtOld))
+			if (1 == areVecEqual(vtCenters, vtOld))
 			{
 				cout << "Breaking as the points have not changes...." << endl;
 				//TODO: Write the points to output file...
-				writeToFile();
+				writeToFile(vtCenters);
 				break;
 			}
 			/*else
@@ -250,10 +262,32 @@ int main(int argc, char **argv)
 				cout << endl;
 			}*/
 		}
-
+		//Option2
+		//writeToFile();
 		end = chrono::system_clock::now();
 		chrono::duration<double> totaltime = (end - begin);
 		cout << "Time Taken in sec = " << (float)totaltime.count() << std::endl;
+
+		//TODO: GPU Calculation
+		//Converting the main vector to array...
+		/*Coordinates *mainArr = new Coordinates[vt.size()];
+
+		memset(mainArr, 0, vt.size());
+
+		vector<Coordinates> ::iterator it;
+		int iCnt = 0;
+		for (it = vt.begin(); it != vt.end(); it++, iCnt++)
+		{
+			mainArr[iCnt].x = it->x;
+			mainArr[iCnt].y = it->y;
+			mainArr[iCnt].z = it->z;
+		}*/
+		
+		//Displaying...
+		/*for (int i=0; i < iCnt; i++)
+		{			
+			cout << mainArr[i].x << ", " << mainArr[i].y <<", "<< mainArr[i].z << endl;
+		}*/
 	}
 	catch (const exception& ex)
 	{
